@@ -6,7 +6,8 @@
     "nodemon": "^1.18.7",
     "eslint": "^5.9.0",
     "eslint-plugin-prettier": "^3.0.0",
-    "prettier": "^1.16.4"
+    "prettier": "^1.16.4",
+    "jest": "~26.6.3"
   },
   "dependencies": {
     "dotenv": "^8.2.0",
@@ -15,7 +16,7 @@
   "scripts": {
     "run": "nodemon --inspect server",
     "start": "node server.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "jest --config ./jest.config.json"
   },
   "keywords": [
     "cart",

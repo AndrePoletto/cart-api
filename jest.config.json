@@ -1,0 +1,4 @@
+{
+  "testRegex": "./(/tests/.*|(\\.|/)(test|spec))\\.jsx?$",
+  "rootDir": "."
+}
