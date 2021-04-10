@@ -16,7 +16,7 @@
   "scripts": {
     "run": "nodemon --inspect server",
     "start": "node server.js",
-    "test": "jest --config ./jest.config.json"
+    "test": "jest --config ./config/jest.config.json"
   },
   "keywords": [
     "cart",
