@@ -4,6 +4,9 @@ module.exports = (app) => {
     // Default status endPoint, just to check server status
     app.get('/', cartController.serverStatus);
 
+    // Retrieves cart to front
+    app.get('/cart', cartController.getCart);
+
     // Add item to cart
     app.post('/cart/product/add', cartController.addProduct);
 

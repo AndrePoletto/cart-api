@@ -5,6 +5,23 @@ exports.serverStatus = (req, res) => {
     res.send('Server is up and Running!')
 }
 
+exports.getCart = async (req, res) => {
+    // Gets customer's current cart
+    try {
+        await cartModel.findOne({'customer.customerId': req.query.customerId}, (err, success) => {
+            if (success) {
+                res.send(success);
+            } else {
+                res.status(404).send({message: "Didn't find any cart for the given customerId"});
+            }
+        }).exec();
+    } catch (err) {
+        res.status(500).send({
+            message: err || "Some error occurred while retrieving customer cart."
+        });
+    }
+}
+
 exports.addProduct = async (req, res) => {
     // Gets customer's current cart
     let cartObject = await getCartByCustomer(req.body.customerId);
