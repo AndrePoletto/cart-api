@@ -14,23 +14,23 @@ exports.addProduct = async (req, res) => {
     if (!!cartObject) {
         console.log("Client cart already in use, adding product");
         // Buscar pelo Id do produto no carrinho em memoria, se achar adiciona a quantidade, se não adiciona o item
-        const itemObjectIndex = cartObject.items.findIndex(item => item.itemId === (req.body.itemId).toString());
+        const itemObjectIndex = cartObject["items"].findIndex(item => item.itemId === (req.body.itemId).toString());
 
-        if (!!cartObject.items[itemObjectIndex]) {
+        if (!!cartObject["items"][itemObjectIndex]) {
             console.log("Item already added to cart, increasing quantity");
             // Adds req quantity to persisted quantity
-            cartObject.items[itemObjectIndex].quantity += req.body.itemQuantity;
+            cartObject["items"][itemObjectIndex].quantity += req.body.itemQuantity;
         } else {
             itemObject.quantity = req.body.itemQuantity;
-            cartObject.items.push(itemObject)
+            cartObject["items"].push(itemObject)
         }
         // Calculates new total values
-        const totalResult = calculatesCartTotals(cartObject.items);
+        const totalResult = calculatesCartTotals(cartObject["items"]);
         // Creates items Array
         const itemsArray = totalResult.itemsArray;
 
         // Preparing mongo update
-        const query = {cartId: cartObject.cartId};
+        const query = {cartId: cartObject["cartId"]};
         const queryAction = {items: itemsArray, total: totalResult.cartTotalPrice};
 
         const callback = (err, success) => {
@@ -80,24 +80,22 @@ exports.addProduct = async (req, res) => {
 exports.removeProduct = async (req, res) => {
     // Gets customer's current cart
     let cartObject = await getCartByCustomer(req.body.customerId);
-    // Gets item info
-    let itemObject = await getItemInfo(req.body.itemId);
 
     if (!!cartObject) {
-        console.log(`Cart found with id ${cartObject.cartId}...`);
+        console.log(`Cart found with id ${cartObject["cartId"]}...`);
         // Searching product n items array
-        const itemObjectIndex = cartObject.items.findIndex(item => item.itemId === (req.body.itemId).toString());
-        if (!!cartObject.items[itemObjectIndex]) {
+        const itemObjectIndex = cartObject["items"].findIndex(item => item.itemId === (req.body.itemId).toString());
+        if (!!cartObject["items"][itemObjectIndex]) {
             console.log("Item found, removing it");
             // Removes product from object on memory
-            cartObject.items.splice(itemObjectIndex, 1);
+            cartObject["items"].splice(itemObjectIndex, 1);
             // Calculates new total values
-            const totalResult = calculatesCartTotals(cartObject.items);
+            const totalResult = calculatesCartTotals(cartObject["items"]);
             // Creates items Array
             const itemsArray = totalResult.itemsArray;
 
             // Preparing Mongo query
-            const query = {cartId: cartObject.cartId};
+            const query = {cartId: cartObject["cartId"]};
             const queryAction = {items: itemsArray, total: totalResult.cartTotalPrice};
 
             const callback = (err, success) => {
@@ -128,22 +126,22 @@ exports.updateProduct = async (req, res) => {
     let cartObject = await getCartByCustomer(req.body.customerId);
 
     if (!!cartObject) {
-        console.log(`Cart found with id ${cartObject.cartId}...`);
+        console.log(`Cart found with id ${cartObject["cartId"]}...`);
         // Searching product n items array
-        const itemObjectIndex = cartObject.items.findIndex(item => item.itemId === (req.body.itemId).toString());
-        if (!!cartObject.items[itemObjectIndex]) {
+        const itemObjectIndex = cartObject["items"].findIndex(item => item.itemId === (req.body.itemId).toString());
+        if (!!cartObject["items"][itemObjectIndex]) {
             console.log("Item found, updating quantity");
 
             // Changing object  memory quantity
-            cartObject.items[itemObjectIndex].quantity = req.body.itemQuantity;
+            cartObject["items"][itemObjectIndex].quantity = req.body.itemQuantity;
 
             // Calculates new total values
-            const totalResult = calculatesCartTotals(cartObject.items);
+            const totalResult = calculatesCartTotals(cartObject["items"]);
             // Creates items Array
             const itemsArray = totalResult.itemsArray;
 
             // Preparing mongo query
-            const query = {cartId: cartObject.cartId};
+            const query = {cartId: cartObject["cartId"]};
             const queryAction = {items: itemsArray, total: totalResult.cartTotalPrice};
 
             const callback = (err, success) => {
@@ -174,7 +172,7 @@ exports.deleteCart = async (req, res) => {
     let cartObject = await getCartByCustomer(req.body.customerId);
 
     if (!!cartObject) {
-        const query = {cartId: cartObject.cartId};
+        const query = {cartId: cartObject["cartId"]};
 
         const callback = (err, success) => {
             if (success) {
@@ -196,7 +194,7 @@ exports.deleteCart = async (req, res) => {
 
 exports.addCoupon = async (req, res) => {
     // Gets coupon code
-    const couponCode = req.body.couponCode;
+    const couponCode = req.body["couponCode"];
     const couponObject = checksCoupon(couponCode);
 
     // Validates coupon
@@ -205,16 +203,16 @@ exports.addCoupon = async (req, res) => {
         let cartObject = await getCartByCustomer(req.body.customerId);
 
         if (!!cartObject) {
-            console.log(`Cart found with id ${cartObject.cartId}...`);
+            console.log(`Cart found with id ${cartObject["cartId"]}...`);
 
-            cartObject.coupon.push(couponObject);
+            cartObject["coupon"].push(couponObject);
 
             // Calculates new total values
-            const totalResult = calculatesCartTotals(cartObject.items, cartObject.coupon);
+            const totalResult = calculatesCartTotals(cartObject["items"], cartObject["coupon"]);
             const couponsArray = totalResult.couponsArray;
 
             // Preparing mongo query
-            const query = {cartId: cartObject.cartId};
+            const query = {cartId: cartObject["cartId"]};
             const queryAction = {coupon: couponsArray, total: totalResult.cartTotalPrice};
 
             const callback = (err, success) => {
@@ -246,14 +244,14 @@ exports.addCoupon = async (req, res) => {
 const calculatesCartTotals = (itemsArray = [], couponArray= null ) => {
     let cartTotalPrice = 0
 
-    itemsArray.forEach((item, index) => {
+    itemsArray.forEach((item) => {
         item.totalPrice = item.price * item.quantity;
 
         cartTotalPrice += item.totalPrice;
     });
 
     if (!!couponArray) {
-        couponArray.forEach((item, index) => {
+        couponArray.forEach((item) => {
             cartTotalPrice = (cartTotalPrice - item.couponValue).toFixed(2);
         });
     }
