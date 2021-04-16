@@ -14,13 +14,15 @@ const CartSchema = mongoose.Schema({
         imageUrl: String,
         uri: String,
         productName: String,
-        productCode: String
+        productCode: String,
+        totalPrice: Number
     }],
     coupon: [{
         couponId: String,
         couponName: String,
         couponValue: Number
-    }]
+    }],
+    total: Number
 }, {timestamps: true, versionKey: false});
 
 module.exports = mongoose.model('Cart', CartSchema);

@@ -16,25 +16,22 @@ exports.addProduct = async (req, res) => {
         // Buscar pelo Id do produto no carrinho em memoria, se achar adiciona a quantidade, se não adiciona o item
         const itemObjectIndex = cartObject.items.findIndex(item => item.itemId === (req.body.itemId).toString());
 
-        let queryAction = {};
         if (!!cartObject.items[itemObjectIndex]) {
             console.log("Item already added to cart, increasing quantity");
             // Adds req quantity to persisted quantity
             cartObject.items[itemObjectIndex].quantity += req.body.itemQuantity;
-            // Updates persisted object
-            queryAction = {
-                items: cartObject.items
-            }
         } else {
             itemObject.quantity = req.body.itemQuantity;
-            // Pushes a new object to items array
-            queryAction = {
-                $push: {
-                    items: itemObject
-                }
-            };
+            cartObject.items.push(itemObject)
         }
+        // Calculates new total values
+        const totalResult = calculatesCartTotals(cartObject.items);
+        // Creates items Array
+        const itemsArray = totalResult.itemsArray;
+
+        // Preparing mongo update
         const query = {cartId: cartObject.cartId};
+        const queryAction = {items: itemsArray, total: totalResult.cartTotalPrice};
 
         const callback = (err, success) => {
             if (success) {
@@ -48,8 +45,14 @@ exports.addProduct = async (req, res) => {
 
         cartModel.findOneAndUpdate(query, queryAction, callback);
     } else {
+        console.log("No cart found for given client, creating one now");
         // Adds item quantity
         itemObject.quantity = req.body.itemQuantity;
+        // Calculates new total values
+        const totalResult = calculatesCartTotals([itemObject]);
+        // Creates items Array
+        const itemsArray = totalResult.itemsArray;
+
         // Creates a new cart object
         const cart = new cartModel({
             cartId: uuid.v4(),
@@ -58,7 +61,8 @@ exports.addProduct = async (req, res) => {
                 // Fixing email for dev, usually would get this info from another API or even from the request
                 email: "dev@email.com"
             },
-            items: [itemObject]
+            items: itemsArray,
+            total: totalResult.cartTotalPrice
         });
 
         // Saves new cartModel in the database
@@ -226,6 +230,27 @@ exports.addCoupon = async (req, res) => {
             message: `Coupon ${couponCode} is not valid`
         });
     }
+}
+
+
+// Internal API use only, with no endPoints
+const calculatesCartTotals = (itemsArray = [], couponValue= null ) => {
+    let cartTotalPrice = 0
+
+    itemsArray.forEach((item, index) => {
+        item.totalPrice = item.price * item.quantity;
+
+        cartTotalPrice += item.totalPrice;
+    });
+
+    if (!!couponValue && couponValue > 0) {
+        cartTotalPrice -= couponValue;
+    }
+
+    return {
+        cartTotalPrice,
+        itemsArray: itemsArray
+    };
 }
 
 
