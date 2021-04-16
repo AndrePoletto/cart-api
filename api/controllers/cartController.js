@@ -67,7 +67,7 @@ exports.addProduct = async (req, res) => {
 
         // Saves new cartModel in the database
         cart.save()
-            .then(data => {
+            .then(() => {
                 res.send(`Success, item ${req.body.itemId} added to cart`);
             }).catch(err => {
             res.status(500).send({
@@ -126,8 +126,6 @@ exports.removeProduct = async (req, res) => {
 exports.updateProduct = async (req, res) => {
     // Gets customer's current cart
     let cartObject = await getCartByCustomer(req.body.customerId);
-    // Gets item info
-    let itemObject = await getItemInfo(req.body.itemId);
 
     if (!!cartObject) {
         console.log(`Cart found with id ${cartObject.cartId}...`);
@@ -209,11 +207,15 @@ exports.addCoupon = async (req, res) => {
         if (!!cartObject) {
             console.log(`Cart found with id ${cartObject.cartId}...`);
 
+            cartObject.coupon.push(couponObject);
+
+            // Calculates new total values
+            const totalResult = calculatesCartTotals(cartObject.items, cartObject.coupon);
+            const couponsArray = totalResult.couponsArray;
+
+            // Preparing mongo query
             const query = {cartId: cartObject.cartId};
-            // Updates persisted object
-            queryAction = {
-                coupon: couponObject
-            };
+            const queryAction = {coupon: couponsArray, total: totalResult.cartTotalPrice};
 
             const callback = (err, success) => {
                 if (success) {
@@ -241,7 +243,7 @@ exports.addCoupon = async (req, res) => {
 
 
 // Internal API use only, with no endPoints
-const calculatesCartTotals = (itemsArray = [], couponValue= null ) => {
+const calculatesCartTotals = (itemsArray = [], couponArray= null ) => {
     let cartTotalPrice = 0
 
     itemsArray.forEach((item, index) => {
@@ -250,13 +252,16 @@ const calculatesCartTotals = (itemsArray = [], couponValue= null ) => {
         cartTotalPrice += item.totalPrice;
     });
 
-    if (!!couponValue && couponValue > 0) {
-        cartTotalPrice -= couponValue;
+    if (!!couponArray) {
+        couponArray.forEach((item, index) => {
+            cartTotalPrice = (cartTotalPrice - item.couponValue).toFixed(2);
+        });
     }
 
     return {
         cartTotalPrice,
-        itemsArray: itemsArray
+        itemsArray: itemsArray,
+        couponsArray: !!couponArray ? couponArray : null
     };
 }
 
