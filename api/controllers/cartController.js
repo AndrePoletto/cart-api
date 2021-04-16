@@ -89,6 +89,7 @@ exports.removeProduct = async (req, res) => {
         const itemObjectIndex = cartObject.items.findIndex(item => item.itemId === (req.body.itemId).toString());
         if (!!cartObject.items[itemObjectIndex]) {
             console.log("Item found, removing it");
+            // Removes product from object on memory
             cartObject.items.splice(itemObjectIndex, 1);
             // Calculates new total values
             const totalResult = calculatesCartTotals(cartObject.items);
@@ -97,8 +98,7 @@ exports.removeProduct = async (req, res) => {
 
             // Preparing Mongo query
             const query = {cartId: cartObject.cartId};
-            // Updates persisted object
-            queryAction = {items: itemsArray, total: totalResult.cartTotalPrice};
+            const queryAction = {items: itemsArray, total: totalResult.cartTotalPrice};
 
             const callback = (err, success) => {
                 if (success) {
@@ -134,15 +134,19 @@ exports.updateProduct = async (req, res) => {
         // Searching product n items array
         const itemObjectIndex = cartObject.items.findIndex(item => item.itemId === (req.body.itemId).toString());
         if (!!cartObject.items[itemObjectIndex]) {
-            console.log("Item found, removing it");
+            console.log("Item found, updating quantity");
 
-            itemObject.quantity = req.body.itemQuantity;
+            // Changing object  memory quantity
+            cartObject.items[itemObjectIndex].quantity = req.body.itemQuantity;
 
+            // Calculates new total values
+            const totalResult = calculatesCartTotals(cartObject.items);
+            // Creates items Array
+            const itemsArray = totalResult.itemsArray;
+
+            // Preparing mongo query
             const query = {cartId: cartObject.cartId};
-            // Updates persisted object
-            queryAction = {
-                items: itemObject
-            };
+            const queryAction = {items: itemsArray, total: totalResult.cartTotalPrice};
 
             const callback = (err, success) => {
                 if (success) {
