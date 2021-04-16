@@ -89,13 +89,16 @@ exports.removeProduct = async (req, res) => {
         const itemObjectIndex = cartObject.items.findIndex(item => item.itemId === (req.body.itemId).toString());
         if (!!cartObject.items[itemObjectIndex]) {
             console.log("Item found, removing it");
+            cartObject.items.splice(itemObjectIndex, 1);
+            // Calculates new total values
+            const totalResult = calculatesCartTotals(cartObject.items);
+            // Creates items Array
+            const itemsArray = totalResult.itemsArray;
+
+            // Preparing Mongo query
             const query = {cartId: cartObject.cartId};
             // Updates persisted object
-            queryAction = {
-                $pull: {
-                    items: itemObject
-                }
-            };
+            queryAction = {items: itemsArray, total: totalResult.cartTotalPrice};
 
             const callback = (err, success) => {
                 if (success) {
