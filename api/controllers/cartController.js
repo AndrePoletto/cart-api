@@ -38,7 +38,7 @@ exports.addProduct = async (req, res) => {
 
         const callback = (err, success) => {
             if (success) {
-                res.send(`Success, ${req.body.itemId} added to cart`);
+                res.send(`Success, item ${req.body.itemId} added to cart`);
             } else {
                 res.status(500).send({
                     message: err.message || "Some error occurred while adding new item to cart."
@@ -55,7 +55,8 @@ exports.addProduct = async (req, res) => {
             cartId: uuid.v4(),
             customer: {
                 customerId: req.body.customerId,
-                email: req.body.customerEmail
+                // Fixing email for dev, usually would get this info from another API or even from the request
+                email: "dev@email.com"
             },
             items: [itemObject]
         });
@@ -63,11 +64,166 @@ exports.addProduct = async (req, res) => {
         // Saves new cartModel in the database
         cart.save()
             .then(data => {
-                res.send(`Success, ${req.body.itemId} added to cart`);
+                res.send(`Success, item ${req.body.itemId} added to cart`);
             }).catch(err => {
             res.status(500).send({
                 message: err.message || "Some error occurred while adding new cart."
             });
+        });
+    }
+}
+
+exports.removeProduct = async (req, res) => {
+    // Gets customer's current cart
+    let cartObject = await getCartByCustomer(req.body.customerId);
+    // Gets item info
+    let itemObject = await getItemInfo(req.body.itemId);
+
+    if (!!cartObject) {
+        console.log(`Cart found with id ${cartObject.cartId}...`);
+        // Searching product n items array
+        const itemObjectIndex = cartObject.items.findIndex(item => item.itemId === (req.body.itemId).toString());
+        if (!!cartObject.items[itemObjectIndex]) {
+            console.log("Item found, removing it");
+            const query = {cartId: cartObject.cartId};
+            // Updates persisted object
+            queryAction = {
+                $pull: {
+                    items: itemObject
+                }
+            };
+
+            const callback = (err, success) => {
+                if (success) {
+                    res.send(`Success, item ${req.body.itemId} removed from cart`);
+                } else {
+                    res.status(500).send({
+                        message: err.message || "Some error occurred while removing item from cart."
+                    });
+                }
+            };
+
+            cartModel.findOneAndUpdate(query, queryAction, callback);
+        } else {
+            res.status(404).send({
+                message: "Product not found on client's cart"
+            });
+        }
+    } else {
+        res.status(404).send({
+            message: `Cart not found for client with id: ${req.body.customerId}`
+        });
+    }
+}
+
+exports.updateProduct = async (req, res) => {
+    // Gets customer's current cart
+    let cartObject = await getCartByCustomer(req.body.customerId);
+    // Gets item info
+    let itemObject = await getItemInfo(req.body.itemId);
+
+    if (!!cartObject) {
+        console.log(`Cart found with id ${cartObject.cartId}...`);
+        // Searching product n items array
+        const itemObjectIndex = cartObject.items.findIndex(item => item.itemId === (req.body.itemId).toString());
+        if (!!cartObject.items[itemObjectIndex]) {
+            console.log("Item found, removing it");
+
+            itemObject.quantity = req.body.itemQuantity;
+
+            const query = {cartId: cartObject.cartId};
+            // Updates persisted object
+            queryAction = {
+                items: itemObject
+            };
+
+            const callback = (err, success) => {
+                if (success) {
+                    res.send(`Updated item ${req.body.itemId} successfully`);
+                } else {
+                    res.status(500).send({
+                        message: err.message || "Some error occurred while updating product quantity."
+                    });
+                }
+            };
+
+            cartModel.findOneAndUpdate(query, queryAction, callback);
+        } else {
+            res.status(404).send({
+                message: "Product not found on client's cart"
+            });
+        }
+    } else {
+        res.status(404).send({
+            message: `Cart not found for client with id: ${req.body.customerId}`
+        });
+    }
+}
+
+exports.deleteCart = async (req, res) => {
+    // Gets customer's current cart
+    let cartObject = await getCartByCustomer(req.body.customerId);
+
+    if (!!cartObject) {
+        const query = {cartId: cartObject.cartId};
+
+        const callback = (err, success) => {
+            if (success) {
+                res.send(`Cart from client ${req.body.customerId} deleted successfully`);
+            } else {
+                res.status(500).send({
+                    message: err.message || "Some error occurred while deleting cart."
+                });
+            }
+        };
+
+        cartModel.findOneAndDelete(query, callback);
+    } else {
+        res.status(404).send({
+            message: `Cart not found for client with id: ${req.body.customerId}`
+        });
+    }
+}
+
+exports.addCoupon = async (req, res) => {
+    // Gets coupon code
+    const couponCode = req.body.couponCode;
+    const couponObject = checksCoupon(couponCode);
+
+    // Validates coupon
+    if (!!couponObject) {
+        // Gets customer's current cart
+        let cartObject = await getCartByCustomer(req.body.customerId);
+
+        if (!!cartObject) {
+            console.log(`Cart found with id ${cartObject.cartId}...`);
+
+            const query = {cartId: cartObject.cartId};
+            // Updates persisted object
+            queryAction = {
+                coupon: couponObject
+            };
+
+            const callback = (err, success) => {
+                if (success) {
+                    res.send(`Coupon ${couponObject.couponId} added successfully`);
+                } else {
+                    res.status(500).send({
+                        message: err.message || "Some error occurred while adding coupon."
+                    });
+                }
+            };
+
+            cartModel.findOneAndUpdate(query, queryAction, callback);
+        } else {
+            res.status(404).send({
+                message: `Cart not found for client with id: ${req.body.customerId}`
+            });
+        }
+
+    } else {
+        res.status(403).send({
+            message: `Coupon ${couponCode} is not valid`
         });
     }
 }
@@ -102,7 +258,7 @@ const getItemInfo = (itemId) => {
         }
     ]
 
-    return itemInfo[itemId-1]
+    return !!itemInfo[itemId-1] ? itemInfo[itemId-1] : null
 }
 
 const getCartByCustomer = (customerId) => {

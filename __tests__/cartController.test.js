@@ -5,8 +5,7 @@ test('Adds a product to a empty/null cart', () => {
         body: {
             "itemId": "1",
             "itemQuantity": 1,
-            "customerId": "123",
-            "customerEmail": "polettoandre@gmail.com"
+            "customerId": "123"
         }
     };
 
