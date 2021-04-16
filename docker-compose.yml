@@ -1,0 +1,33 @@
+version: '3'
+
+services:
+  # MongoDB to persist cart data.
+  mongo_cart_database:
+    container_name: mongo_cart_database
+    image: "mongo:3.6.17"
+    ports:
+      - "27017:27017"
+    restart: always
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=challenge-dev
+      - MONGO_INITDB_ROOT_PASSWORD=p4ssw0rd
+      - MONGO_INITDB_DATABASE=thanos-testing
+
+
+  # Cart API.
+  cart_api:
+    container_name: ecommerce_cart_api
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "5000:5000"
+    environment:
+      - PUBLIC_PORT=5000
+      - MONGO_URI=mongodb://challenge-dev:p4ssw0rd@mongo_cart_database:27017
+    links:
+      - mongo_cart_database
+    command: 'npm run start'
+
+networks:
+  default:
