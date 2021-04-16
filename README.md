@@ -190,7 +190,8 @@ By executing the _package.json_ `run` script we can run this project for develop
 
 ```sh
 # With npm
-$ npm  run
+$ npm install
+$ npm run
 ```
 this project also have a `docker-compose.yml` file that can be used
 ```sh
@@ -206,7 +207,7 @@ By executing the _package.json_ `test` script, a `jest` process will start and r
 
 ```sh
 # With npm
-$ npm  test
+$ npm test
 ```
 
 ## TO-DO
