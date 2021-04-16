@@ -24,7 +24,7 @@ services:
       - "5000:5000"
     environment:
       - PUBLIC_PORT=5000
-      - MONGO_URI=mongodb://challenge-dev:p4ssw0rd@mongo_cart_database:27017
+      - MONGO_URI=mongodb://challenge-dev:p4ssw0rd@mongo_cart_database:27017/ecommerce
     links:
       - mongo_cart_database
     command: 'npm run start'
